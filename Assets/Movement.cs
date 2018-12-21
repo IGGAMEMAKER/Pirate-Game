@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,6 +19,11 @@ public class Movement : MonoBehaviour {
 
     float ZRotationSensitivity;
 
+    float RotationAngleX;
+    float RotationAngleZ;
+
+    public float Sensitivity;
+
     // Use this for initialization
     void Start () {
         Camera = GetComponent<Camera>();
@@ -32,15 +38,10 @@ public class Movement : MonoBehaviour {
         ZRotationTimer = ZRotationPeriod;
 
         ZRotationSensitivity = 0.05f;
-
     }
 
-    void Move(float direction)
+    void RockTheShip()
     {
-        ObservableObject.transform.position += ObservableObject.transform.forward * movementSpeed * direction;
-
-        Camera.transform.position = ObservableObject.transform.position - Distance;
-
         ZRotationTimer -= Time.deltaTime;
 
         if (ZRotationTimer < 0)
@@ -49,13 +50,42 @@ public class Movement : MonoBehaviour {
             ZRotationMultiplier *= -1f;
         }
 
-        float ZRotation = ZRotationSensitivity * ZRotationMultiplier;
-        ObservableObject.transform.Rotate(new Vector3(0, 0, ZRotation));
+        ObservableObject.transform.Rotate(new Vector3(0, 0, ZRotationSensitivity * ZRotationMultiplier));
     }
 
-    void Rotate(float angle)
+    void Move(float direction)
+    {
+        ObservableObject.transform.position += ObservableObject.transform.forward * movementSpeed * direction;
+
+        //Camera.transform.position = ObservableObject.transform.position - Distance;
+
+        RockTheShip();
+    }
+
+    void RotateObject(float angle)
     {
         ObservableObject.transform.Rotate(0, angle, 0, Space.Self);
+    }
+
+    void RotateCameraVertically(float direction)
+    {
+        RotationAngleZ += direction * Sensitivity / 100f;
+    }
+
+    void RotateCameraHorizontally(float direction)
+    {
+        RotationAngleX += direction * Sensitivity / 100f;
+    }
+
+    void LookAtObject()
+    {
+        Camera.transform.LookAt(ObservableObject.transform);
+
+        float movementX = Mathf.Sin(RotationAngleX);
+        float movementZ = Mathf.Cos(RotationAngleX);
+        float movementY = Mathf.Sin(RotationAngleZ);
+
+        Camera.transform.position = ObservableObject.transform.position + new Vector3(movementX, movementY, movementZ) * Distance.magnitude;
     }
 
     void ProcessInput()
@@ -67,14 +97,28 @@ public class Movement : MonoBehaviour {
             Move(-1);
 
         if (Input.GetKey(KeyCode.D))
-            Rotate(rotation);
+            RotateObject(rotation);
 
         if (Input.GetKey(KeyCode.A))
-            Rotate(-rotation);
+            RotateObject(-rotation);
+
+        if (Input.GetKey(KeyCode.UpArrow))
+            RotateCameraVertically(1);
+
+        if (Input.GetKey(KeyCode.DownArrow))
+            RotateCameraVertically(-1);
+
+        if (Input.GetKey(KeyCode.LeftArrow))
+            RotateCameraHorizontally(-1);
+
+        if (Input.GetKey(KeyCode.RightArrow))
+            RotateCameraHorizontally(1);
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update () {
         ProcessInput();
+
+        LookAtObject();
 	}
 }
